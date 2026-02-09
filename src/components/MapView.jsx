@@ -5,6 +5,7 @@ import "leaflet/dist/leaflet.css";
 import "../styles/leaflet-overrides.css";
 import { STOPS } from "../data/stops.js";
 import { C } from "../utils/constants.js";
+import RouteOverlay from "./RouteOverlay.jsx";
 
 // Manhattan center and bounds
 const MANHATTAN_CENTER = [40.7589, -73.9851];
@@ -91,33 +92,40 @@ function stopColor(stop) {
   return C.ltd;
 }
 
-function StopMarkers({ onStopClick }) {
-  return STOPS.map((stop) => (
-    <CircleMarker
-      key={stop.id}
-      center={[stop.lat, stop.lng]}
-      radius={7}
-      pathOptions={{
-        fillColor: stopColor(stop),
-        color: "#ffffff",
-        weight: 1.5,
-        fillOpacity: 0.85,
-      }}
-      eventHandlers={{
-        click: () => onStopClick(stop),
-      }}
-    />
-  ));
+function StopMarkers({ onStopClick, selectedRoute }) {
+  return STOPS.map((stop) => {
+    const isOnRoute = selectedRoute
+      ? stop.routes.some((r) => r.id === selectedRoute)
+      : false;
+    const isDimmed = selectedRoute && !isOnRoute;
+
+    return (
+      <CircleMarker
+        key={stop.id}
+        center={[stop.lat, stop.lng]}
+        radius={isOnRoute ? 9 : isDimmed ? 5 : 7}
+        pathOptions={{
+          fillColor: isDimmed ? "#555" : stopColor(stop),
+          color: isDimmed ? "#444" : "#ffffff",
+          weight: isDimmed ? 0.5 : isOnRoute ? 2.5 : 1.5,
+          fillOpacity: isDimmed ? 0.3 : isOnRoute ? 1.0 : 0.85,
+        }}
+        eventHandlers={{
+          click: () => onStopClick(stop),
+        }}
+      />
+    );
+  });
 }
 
 // ─── Main MapView ────────────────────────────────────────────────
-export default function MapView({ userLocation, locating, onLocate, onStopClick }) {
+export default function MapView({ userLocation, locating, onLocate, onStopClick, selectedRoute }) {
   const handleStopClick = useCallback((stop) => {
     onStopClick(stop);
   }, [onStopClick]);
 
   return (
-    <div style={{ height: "calc(100vh - 90px)", width: "100%" }}>
+    <div style={{ flex: 1, width: "100%" }}>
       <MapContainer
         center={MANHATTAN_CENTER}
         zoom={DEFAULT_ZOOM}
@@ -129,7 +137,8 @@ export default function MapView({ userLocation, locating, onLocate, onStopClick 
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <StopMarkers onStopClick={handleStopClick} />
+        <RouteOverlay selectedRoute={selectedRoute} />
+        <StopMarkers onStopClick={handleStopClick} selectedRoute={selectedRoute} />
         <UserMarker location={userLocation} />
         <FlyToLocation location={userLocation} />
         <LocateControl onLocate={onLocate} locating={locating} />

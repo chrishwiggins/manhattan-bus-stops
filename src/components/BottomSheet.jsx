@@ -2,7 +2,7 @@ import { useRef, useEffect, useCallback } from "react";
 import { C } from "../utils/constants.js";
 import { haversine, formatDist, walkMin } from "../utils/geo.js";
 
-export default function BottomSheet({ stop, userLocation, onClose }) {
+export default function BottomSheet({ stop, userLocation, onClose, selectedRoute, onRouteSelect }) {
   const sheetRef = useRef(null);
   const dragRef = useRef({ startY: 0, startHeight: 0, dragging: false });
 
@@ -114,57 +114,96 @@ export default function BottomSheet({ stop, userLocation, onClose }) {
               <div style={{ fontSize: 11, color: C.dim, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>
                 SBS Routes
               </div>
-              {sbsRoutes.map((r) => (
-                <a
-                  key={r.id}
-                  href={`https://www.mta.info/schedules/bus/${scheduleSlug(r.id)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: "flex", alignItems: "center", gap: 8,
-                    padding: "8px 10px", background: C.sbsBg,
-                    border: `1px solid ${C.sbs}33`, borderRadius: 8,
-                    marginBottom: 4, textDecoration: "none", color: C.text,
-                  }}
-                >
-                  <span style={{
-                    padding: "2px 8px", borderRadius: 4, background: C.sbs,
-                    color: "#fff", fontSize: 11, fontWeight: 800,
-                  }}>{r.name}</span>
-                  <span style={{ fontSize: 12, color: C.dim, flex: 1 }}>Schedule</span>
-                  <span style={{ fontSize: 12, color: C.dim }}>&#8599;</span>
-                </a>
-              ))}
+              {sbsRoutes.map((r) => {
+                const isActive = selectedRoute === r.id;
+                return (
+                  <div
+                    key={r.id}
+                    onClick={() => onRouteSelect(isActive ? null : r.id)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 8,
+                      padding: "8px 10px", background: C.sbsBg,
+                      border: `1px solid ${isActive ? C.sbs : C.sbs + "33"}`,
+                      borderRadius: 8, marginBottom: 4, cursor: "pointer",
+                    }}
+                  >
+                    <span style={{
+                      padding: "2px 8px", borderRadius: 4, background: C.sbs,
+                      color: "#fff", fontSize: 11, fontWeight: 800,
+                    }}>{r.name}</span>
+                    <span style={{ fontSize: 12, color: isActive ? C.text : C.dim, flex: 1 }}>
+                      {isActive ? "Showing on map" : "Show route"}
+                    </span>
+                    <a
+                      href={`https://www.mta.info/schedules/bus/${scheduleSlug(r.id)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        width: 28, height: 28, borderRadius: 6,
+                        background: C.card, textDecoration: "none",
+                        color: C.dim, fontSize: 13, flexShrink: 0,
+                      }}
+                    >&#8599;</a>
+                  </div>
+                );
+              })}
             </div>
           )}
 
           {ltdRoutes.length > 0 && (
-            <div>
+            <div style={{ marginBottom: 10 }}>
               <div style={{ fontSize: 11, color: C.dim, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>
                 Limited Routes
               </div>
-              {ltdRoutes.map((r) => (
-                <a
-                  key={r.id}
-                  href={`https://www.mta.info/schedules/bus/${scheduleSlug(r.id)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: "flex", alignItems: "center", gap: 8,
-                    padding: "8px 10px", background: C.ltdBg,
-                    border: `1px solid ${C.ltd}33`, borderRadius: 8,
-                    marginBottom: 4, textDecoration: "none", color: C.text,
-                  }}
-                >
-                  <span style={{
-                    padding: "2px 8px", borderRadius: 4, background: C.ltd,
-                    color: "#fff", fontSize: 11, fontWeight: 800,
-                  }}>{r.name}</span>
-                  <span style={{ fontSize: 12, color: C.dim, flex: 1 }}>Schedule</span>
-                  <span style={{ fontSize: 12, color: C.dim }}>&#8599;</span>
-                </a>
-              ))}
+              {ltdRoutes.map((r) => {
+                const isActive = selectedRoute === r.id;
+                return (
+                  <div
+                    key={r.id}
+                    onClick={() => onRouteSelect(isActive ? null : r.id)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 8,
+                      padding: "8px 10px", background: C.ltdBg,
+                      border: `1px solid ${isActive ? C.ltd : C.ltd + "33"}`,
+                      borderRadius: 8, marginBottom: 4, cursor: "pointer",
+                    }}
+                  >
+                    <span style={{
+                      padding: "2px 8px", borderRadius: 4, background: C.ltd,
+                      color: "#fff", fontSize: 11, fontWeight: 800,
+                    }}>{r.name}</span>
+                    <span style={{ fontSize: 12, color: isActive ? C.text : C.dim, flex: 1 }}>
+                      {isActive ? "Showing on map" : "Show route"}
+                    </span>
+                    <a
+                      href={`https://www.mta.info/schedules/bus/${scheduleSlug(r.id)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        width: 28, height: 28, borderRadius: 6,
+                        background: C.card, textDecoration: "none",
+                        color: C.dim, fontSize: 13, flexShrink: 0,
+                      }}
+                    >&#8599;</a>
+                  </div>
+                );
+              })}
             </div>
+          )}
+
+          {selectedRoute && (
+            <button
+              onClick={() => onRouteSelect(null)}
+              style={{
+                width: "100%", padding: "8px", border: `1px solid ${C.border}`,
+                borderRadius: 8, background: C.card, color: C.dim,
+                fontSize: 12, cursor: "pointer", fontFamily: "inherit",
+              }}
+            >Clear route overlay</button>
           )}
         </div>
       </div>

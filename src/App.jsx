@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { C } from "./utils/constants.js";
+import { getRouteById } from "./utils/routeLines.js";
 import MapView from "./components/MapView.jsx";
 import BottomSheet from "./components/BottomSheet.jsx";
 import ListView from "./components/ListView.jsx";
@@ -7,8 +8,11 @@ import ListView from "./components/ListView.jsx";
 export default function App() {
   const [viewMode, setViewMode] = useState("map");
   const [selectedStop, setSelectedStop] = useState(null);
+  const [selectedRoute, setSelectedRoute] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [locating, setLocating] = useState(false);
+
+  const selectedRouteObj = selectedRoute ? getRouteById(selectedRoute) : null;
 
   const requestLocation = useCallback(() => {
     if (!navigator.geolocation) return;
@@ -29,7 +33,9 @@ export default function App() {
 
   return (
     <div style={{
-      minHeight: "100vh",
+      height: "100vh",
+      display: "flex",
+      flexDirection: "column",
       background: C.bg,
       color: C.text,
       fontFamily: "'SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif",
@@ -78,6 +84,31 @@ export default function App() {
         </div>
       </div>
 
+      {/* Route banner */}
+      {selectedRouteObj && viewMode === "map" && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8,
+          padding: "6px 16px",
+          background: selectedRouteObj.type === "SBS" ? C.sbsBg : C.ltdBg,
+          borderBottom: `1px solid ${(selectedRouteObj.type === "SBS" ? C.sbs : C.ltd)}44`,
+        }}>
+          <span style={{
+            padding: "2px 8px", borderRadius: 4,
+            background: selectedRouteObj.type === "SBS" ? C.sbs : C.ltd,
+            color: "#fff", fontSize: 11, fontWeight: 800,
+          }}>{selectedRouteObj.name}</span>
+          <span style={{ flex: 1, fontSize: 12, color: C.dim }}>{selectedRouteObj.corridor}</span>
+          <button
+            onClick={() => setSelectedRoute(null)}
+            style={{
+              background: "none", border: "none", color: C.dim,
+              fontSize: 18, cursor: "pointer", padding: "0 4px",
+              fontFamily: "inherit", lineHeight: 1,
+            }}
+          >&#x2715;</button>
+        </div>
+      )}
+
       {/* Map Mode */}
       {viewMode === "map" && (
         <>
@@ -86,19 +117,24 @@ export default function App() {
             locating={locating}
             onLocate={requestLocation}
             onStopClick={setSelectedStop}
+            selectedRoute={selectedRoute}
           />
           <BottomSheet
             stop={selectedStop}
             userLocation={userLocation}
             onClose={() => setSelectedStop(null)}
+            selectedRoute={selectedRoute}
+            onRouteSelect={setSelectedRoute}
           />
         </>
       )}
 
       {/* List Mode */}
       {viewMode === "list" && (
-        <div style={{ maxWidth: 480, margin: "0 auto", paddingBottom: 80 }}>
-          <ListView userLocation={userLocation} onLocationUpdate={handleLocationUpdate} />
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          <div style={{ maxWidth: 480, margin: "0 auto", paddingBottom: 80 }}>
+            <ListView userLocation={userLocation} onLocationUpdate={handleLocationUpdate} />
+          </div>
         </div>
       )}
     </div>
